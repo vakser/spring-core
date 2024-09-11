@@ -1,0 +1,20 @@
+{
+  "John.Doe": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "username": "John.Doe",
+    "password": "12345567890",
+    "isActive": true,
+    "dateOfBirth": "1980-09-06",
+    "address": "123 Main St Anytown CA 12345 USA"
+  },
+  "Mary.Public": {
+    "firstName": "Mary",
+    "lastName": "Public",
+    "username": "Mary.Public",
+    "password": "1234567890",
+    "isActive": true,
+    "dateOfBirth": "1995-10-12",
+    "address": "123 Main St Anytown CA 12345 USA"
+  }
+}

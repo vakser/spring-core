@@ -1,0 +1,10 @@
+{
+  "Sergii.Vakaliuk" : {
+    "firstName": "Sergii",
+    "lastName": "Vakaliuk",
+    "username": "Sergii.Vakaliuk",
+    "password": "1234567890",
+    "isActive": true,
+    "trainingType": "FITNESS"
+  }
+}
