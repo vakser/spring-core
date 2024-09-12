@@ -11,8 +11,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 @Log4j2
 public class TraineeDAOImpl implements TraineeDAO {
-    @Autowired
     private TraineeStorage traineeStorage;
+
+    @Autowired
+    public void setTraineeStorage(TraineeStorage traineeStorage) {
+        this.traineeStorage = traineeStorage;
+    }
 
     @Override
     public void create(Trainee trainee) {

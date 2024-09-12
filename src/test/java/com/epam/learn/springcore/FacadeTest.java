@@ -32,43 +32,48 @@ public class FacadeTest {
 
     @Test
     void testAssignTrainingSession() {
-        Trainee trainee1 = new Trainee();
-        trainee1.setFirstName("John");
-        trainee1.setLastName("Doe");
-        trainee1.setUsername("John.Doe");
-        trainee1.setPassword("1a2b3c4d5e");
-        trainee1.setActive(true);
-        trainee1.setDateOfBirth(new Date());
-        trainee1.setAddress("111 Unknown st Unknown city TX 11111 USA");
-        Trainee trainee2 = new Trainee();
-        trainee2.setFirstName("Mary");
-        trainee2.setLastName("Public");
-        trainee2.setUsername("Mary.Public");
-        trainee2.setPassword("1a2b3c4d5e");
-        trainee2.setActive(false);
-        trainee2.setDateOfBirth(new Date());
-        trainee2.setAddress("1 Franka st Ivano-Frankivsk 11111 Ukraine");
-        Trainer trainer = new Trainer();
-        trainer.setFirstName("Sergii");
-        trainer.setLastName("Vakaliuk");
-        trainer.setUsername("Sergii.Vakaliuk");
-        trainer.setPassword("1a2b3c4d5e");
-        trainer.setActive(true);
-        trainer.setTrainingType(TrainingType.STRETCHING);
-        Training training1 = new Training();
-        training1.setTraineeUsername(trainee1.getUsername());
-        training1.setTrainerUsername(trainer.getUsername());
-        training1.setTrainingName("Quads stretching training");
-        training1.setTrainingType(TrainingType.STRETCHING);
-        training1.setTrainingDate(new Date());
-        training1.setTrainingDuration(45);
-        Training training2 = new Training();
-        training2.setTraineeUsername(trainee2.getUsername());
-        training2.setTrainerUsername(trainer.getUsername());
-        training2.setTrainingName("Hamstrings stretching training");
-        training2.setTrainingType(TrainingType.STRETCHING);
-        training2.setTrainingDate(new Date());
-        training2.setTrainingDuration(60);
+        Trainee trainee1 = Trainee.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .password("1a2b3c4d5e")
+                .isActive(true)
+                .dateOfBirth(new Date())
+                .address("111 Unknown st Unknown city TX 11111 USA")
+                .build();
+        Trainee trainee2 = Trainee.builder()
+                .firstName("Mary")
+                .lastName("Public")
+                .username("Mary.Public")
+                .password("1a2b3c4d5e")
+                .isActive(false)
+                .dateOfBirth(new Date())
+                .address("1 Franka st Ivano-Frankivsk 11111 Ukraine")
+                .build();
+        Trainer trainer = Trainer.builder()
+                .firstName("Sergii")
+                .lastName("Vakaliuk")
+                .username("Sergii.Vakaliuk")
+                .password("1a2b3c4d5e")
+                .isActive(true)
+                .trainingType(TrainingType.STRETCHING)
+                .build();
+        Training training1 = Training.builder()
+                .traineeUsername(trainee1.getUsername())
+                .trainerUsername(trainer.getUsername())
+                .trainingName("Quads stretching training")
+                .trainingType(TrainingType.STRETCHING)
+                .trainingDate(new Date())
+                .trainingDuration(45)
+                .build();
+        Training training2 = Training.builder()
+                .traineeUsername(trainee2.getUsername())
+                .trainerUsername(trainer.getUsername())
+                .trainingName("Hamstrings stretching training")
+                .trainingType(TrainingType.STRETCHING)
+                .trainingDate(new Date())
+                .trainingDuration(60)
+                .build();
         when(traineeService.selectTrainee(trainee1.getUsername())).thenReturn(trainee1);
         when(traineeService.selectTrainee(trainee2.getUsername())).thenReturn(trainee2);
         when(trainerService.selectTrainer(trainer.getUsername())).thenReturn(trainer);

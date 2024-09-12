@@ -44,30 +44,33 @@ public class ServiceTests {
     @BeforeEach
     public void setUp() {
         // Prepare mock data
-        Trainer trainer = new Trainer();
-        trainer.setFirstName("John");
-        trainer.setLastName("Doe");
-        trainer.setUsername("John.Doe");
-        trainer.setPassword("abcdefghij");
-        trainer.setActive(true);
-        trainer.setTrainingType(TrainingType.STRETCHING);
+        Trainer trainer = Trainer.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .password("abcdefghij")
+                .isActive(true)
+                .trainingType(TrainingType.STRETCHING)
+                .build();
         trainers.put(trainer.getUsername(), trainer);
-        Trainee trainee = new Trainee();
-        trainee.setFirstName("Samantha");
-        trainee.setLastName("Fox");
-        trainee.setUsername("Samantha.Fox");
-        trainee.setPassword("abcdefghij");
-        trainee.setActive(true);
-        trainee.setDateOfBirth(new Date());
-        trainee.setAddress("111 Unknown st Unknown city TX 11111 USA");
+        Trainee trainee = Trainee.builder()
+                .firstName("Samantha")
+                .lastName("Fox")
+                .username("Samantha.Fox")
+                .password("abcdefghij")
+                .isActive(true)
+                .dateOfBirth(new Date())
+                .address("111 Unknown st Unknown city TX 11111 USA")
+                .build();
         trainees.put(trainee.getUsername(), trainee);
-        Training training = new Training();
-        training.setTraineeUsername(trainee.getUsername());
-        training.setTrainerUsername(trainer.getUsername());
-        training.setTrainingName("Fitness training 3 times weekly");
-        training.setTrainingType(TrainingType.FITNESS);
-        training.setTrainingDate(new Date());
-        training.setTrainingDuration(45);
+        Training training = Training.builder()
+                .traineeUsername(trainee.getUsername())
+                .trainerUsername(trainer.getUsername())
+                .trainingName("Fitness training 3 times weekly")
+                .trainingType(TrainingType.FITNESS)
+                .trainingDate(new Date())
+                .trainingDuration(45)
+                .build();
         trainings.put(trainee.getUsername() + "-" + trainer.getUsername(), training);
         // Mock the UserDao methods
         when(trainerDAO.select(trainer.getUsername())).thenReturn(trainers.get(trainer.getUsername()));
@@ -101,13 +104,14 @@ public class ServiceTests {
 
     @Test
     void testUpdateTrainer() {
-        Trainer trainer = new Trainer();
-        trainer.setFirstName("John");
-        trainer.setLastName("Doe");
-        trainer.setUsername("John.Doe");
-        trainer.setPassword("abcdefghij");
-        trainer.setActive(false);
-        trainer.setTrainingType(TrainingType.YOGA);
+        Trainer trainer = Trainer.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .password("abcdefghij")
+                .isActive(false)
+                .trainingType(TrainingType.YOGA)
+                .build();
         trainerService.updateTrainer(trainer);
         // Verify that the DAO method update was called with the correct argument
         verify(trainerDAO, times(1)).update(trainer);
@@ -125,14 +129,15 @@ public class ServiceTests {
 
     @Test
     void testCreateTrainee() {
-        Trainee trainee = new Trainee();
-        trainee.setFirstName("Mary");
-        trainee.setLastName("Public");
-        trainee.setUsername("Mary.Public");
-        trainee.setPassword("abcdefghij");
-        trainee.setActive(true);
-        trainee.setDateOfBirth(new Date());
-        trainee.setAddress("555 Where St Where City AL 55555 USA");
+        Trainee trainee = Trainee.builder()
+                .firstName("Mary")
+                .lastName("Public")
+                .username("Mary.Public")
+                .password("abcdefghij")
+                .isActive(true)
+                .dateOfBirth(new Date())
+                .address("555 Where St Where City AL 55555 USA")
+                .build();
         traineeService.createTrainee(trainee);
         // Verify that the DAO method create was called with the correct argument
         verify(traineeDAO, times(1)).create(trainee);
@@ -140,14 +145,15 @@ public class ServiceTests {
 
     @Test
     void testUpdateTrainee() {
-        Trainee trainee = new Trainee();
-        trainee.setFirstName("Samantha");
-        trainee.setLastName("Fox");
-        trainee.setUsername("Samantha.Fox");
-        trainee.setPassword("abcdefghij");
-        trainee.setActive(false);
-        trainee.setDateOfBirth(new Date());
-        trainee.setAddress("1 Shevchenka St Lviv 77777 Ukraine");
+        Trainee trainee = Trainee.builder()
+                .firstName("Samantha")
+                .lastName("Fox")
+                .username("Samantha.Fox")
+                .password("abcdefghij")
+                .isActive(false)
+                .dateOfBirth(new Date())
+                .address("1 Shevchenka St Lviv 77777 Ukraine")
+                .build();
         traineeService.updateTrainee(trainee);
         // Verify that the DAO method update was called with the correct argument
         verify(traineeDAO, times(1)).update(trainee);
@@ -173,13 +179,14 @@ public class ServiceTests {
 
     @Test
     void testCreateTraining() {
-        Training training = new Training();
-        training.setTraineeUsername("John.McGregor");
-        training.setTrainerUsername("Alicia.McLough");
-        training.setTrainingName("Weekly yoga training class");
-        training.setTrainingType(TrainingType.YOGA);
-        training.setTrainingDate(new Date());
-        training.setTrainingDuration(90);
+        Training training = Training.builder()
+                .traineeUsername("John.McGregor")
+                .trainerUsername("Alicia.McLough")
+                .trainingName("Weekly yoga training class")
+                .trainingType(TrainingType.YOGA)
+                .trainingDate(new Date())
+                .trainingDuration(90)
+                .build();
         trainingService.createTraining(training);
         // Verify that the DAO method create was called with the correct argument
         verify(trainingDAO, times(1)).create(training);

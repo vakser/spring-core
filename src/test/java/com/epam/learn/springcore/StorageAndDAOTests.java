@@ -54,11 +54,12 @@ class StorageAndDAOTests {
     @Test
     void testCreateTrainer() {
         assertEquals(trainerStorage.getStorage().size(), 1);
-        Trainer trainer = new Trainer();
-        trainer.setFirstName("Sven");
-        trainer.setLastName("Nielsen");
-        trainer.setActive(true);
-        trainer.setTrainingType(TrainingType.STRETCHING);
+        Trainer trainer = Trainer.builder()
+                .firstName("Sven")
+                .lastName("Nielsen")
+                .isActive(true)
+                .trainingType(TrainingType.STRETCHING)
+                .build();
         trainerDAO.create(trainer);
         assertEquals(trainerStorage.getStorage().size(), 2);
         assertNotNull(trainerDAO.select("Sven.Nielsen"));
@@ -66,11 +67,12 @@ class StorageAndDAOTests {
 
     @Test
     void testCreateTrainerWithSameUsername() {
-        Trainer trainer = new Trainer();
-        trainer.setFirstName("Sergii");
-        trainer.setLastName("Vakaliuk");
-        trainer.setActive(true);
-        trainer.setTrainingType(TrainingType.STRETCHING);
+        Trainer trainer = Trainer.builder()
+                .firstName("Sergii")
+                .lastName("Vakaliuk")
+                .isActive(true)
+                .trainingType(TrainingType.STRETCHING)
+                .build();
         trainerDAO.create(trainer);
         assertNotNull(trainerDAO.select("Sergii.Vakaliuk1"));
     }
@@ -90,12 +92,13 @@ class StorageAndDAOTests {
     @Test
     void testCreateTrainee() {
         assertEquals(2, traineeStorage.getStorage().size());
-        Trainee trainee = new Trainee();
-        trainee.setFirstName("Charles");
-        trainee.setLastName("Benson");
-        trainee.setActive(true);
-        trainee.setDateOfBirth(new Date());
-        trainee.setAddress("321 Some St Sometown CA 54321 USA");
+        Trainee trainee = Trainee.builder()
+                .firstName("Charles")
+                .lastName("Benson")
+                .isActive(true)
+                .dateOfBirth(new Date())
+                .address("321 Some St Sometown CA 54321 USA")
+                .build();
         traineeDAO.create(trainee);
         assertEquals(3, traineeStorage.getStorage().size());
         assertNotNull(traineeDAO.select("Charles.Benson"));
@@ -103,20 +106,22 @@ class StorageAndDAOTests {
 
     @Test
     void testCreateTraineesWithSameUsername() {
-        Trainee trainee1 = new Trainee();
-        trainee1.setFirstName("Mary");
-        trainee1.setLastName("Public");
-        trainee1.setActive(true);
-        trainee1.setDateOfBirth(new Date());
-        trainee1.setAddress("555 Anywhere St Anytown CO 55555 USA");
+        Trainee trainee1 = Trainee.builder()
+                .firstName("Mary")
+                .lastName("Public")
+                .isActive(true)
+                .dateOfBirth(new Date())
+                .address("555 Anywhere St Anytown CO 55555 USA")
+                .build();
         traineeDAO.create(trainee1);
         assertNotNull(traineeDAO.select("Mary.Public1"));
-        Trainee trainee2 = new Trainee();
-        trainee2.setFirstName("Mary");
-        trainee2.setLastName("Public");
-        trainee2.setActive(false);
-        trainee2.setDateOfBirth(new Date());
-        trainee2.setAddress("222 Somewhere St Itown JO 22222 USA");
+        Trainee trainee2 = Trainee.builder()
+                .firstName("Mary")
+                .lastName("Public")
+                .isActive(false)
+                .dateOfBirth(new Date())
+                .address("222 Somewhere St Itown JO 22222 USA")
+                .build();
         traineeDAO.create(trainee2);
         assertNotNull(traineeDAO.select("Mary.Public2"));
         assertEquals(4, traineeStorage.getStorage().size());
@@ -145,13 +150,14 @@ class StorageAndDAOTests {
     @Test
     void testCreateTraining() {
         assertEquals(1, trainingStorage.getStorage().size());
-        Training training = new Training();
-        training.setTraineeUsername("Mary.Public");
-        training.setTrainerUsername("Sergii.Vakaliuk");
-        training.setTrainingName("Fitness training 3 times weekly");
-        training.setTrainingType(TrainingType.FITNESS);
-        training.setTrainingDate(new Date());
-        training.setTrainingDuration(45);
+        Training training = Training.builder()
+                .traineeUsername("Mary.Public")
+                .trainerUsername("Sergii.Vakaliuk")
+                .trainingName("Fitness training 3 times weekly")
+                .trainingType(TrainingType.FITNESS)
+                .trainingDate(new Date())
+                .trainingDuration(45)
+                .build();
         trainingDAO.create(training);
         assertEquals(2, trainingStorage.getStorage().size());
         assertNotNull(trainingDAO.select("Mary.Public", "Sergii.Vakaliuk"));
