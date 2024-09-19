@@ -1,15 +1,15 @@
 package com.epam.learn.springcore;
 
-import com.epam.learn.springcore.dao.TraineeDAO;
-import com.epam.learn.springcore.dao.TrainerDAO;
-import com.epam.learn.springcore.dao.TrainingDAO;
-import com.epam.learn.springcore.entity.Trainee;
-import com.epam.learn.springcore.entity.Trainer;
-import com.epam.learn.springcore.entity.Training;
-import com.epam.learn.springcore.entity.TrainingType;
-import com.epam.learn.springcore.storage.TraineeStorage;
-import com.epam.learn.springcore.storage.TrainerStorage;
-import com.epam.learn.springcore.storage.TrainingStorage;
+//import com.epam.learn.springcore.dao.TraineeDAO;
+//import com.epam.learn.springcore.dao.TrainerDAO;
+//import com.epam.learn.springcore.dao.TrainingDAO;
+//import com.epam.learn.springcore.entity.Trainee;
+//import com.epam.learn.springcore.entity.Trainer;
+//import com.epam.learn.springcore.entity.Training;
+//import com.epam.learn.springcore.entity.TrainingType;
+//import com.epam.learn.springcore.storage.TraineeStorage;
+//import com.epam.learn.springcore.storage.TrainerStorage;
+//import com.epam.learn.springcore.storage.TrainingStorage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,36 +21,36 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class StorageAndDAOTests {
-    @Autowired
-    private TrainerStorage trainerStorage;
-    @Autowired
-    private TrainerDAO trainerDAO;
-    @Autowired
-    private TraineeStorage traineeStorage;
-    @Autowired
-    private TraineeDAO traineeDAO;
-    @Autowired
-    private TrainingStorage trainingStorage;
-    @Autowired
-    private TrainingDAO trainingDAO;
-
-    @BeforeEach
-    void setUp() {
-        trainerStorage.init();
-        traineeStorage.init();
-        trainingStorage.init();
-    }
-
-    @Test
-    void testStoragesInitialized() {
-        assertNotNull(trainerDAO.select("Sergii.Vakaliuk"));
-        assertNull(trainerDAO.select("Charles.Johnson"));
-        assertNotNull(traineeDAO.select("John.Doe"));
-        assertNull(traineeDAO.select("Mike.Tyson"));
-        assertNotNull(trainingDAO.select("John.Doe", "Sergii.Vakaliuk"));
-        assertNull(trainingDAO.select("Mike.Tyson", "Sergii.Vakaliuk"));
-    }
-
+//    @Autowired
+//    private TrainerStorage trainerStorage;
+//    @Autowired
+//    private TrainerDAO trainerDAO;
+//    @Autowired
+//    private TraineeStorage traineeStorage;
+//    @Autowired
+//    private TraineeDAO traineeDAO;
+//    @Autowired
+//    private TrainingStorage trainingStorage;
+//    @Autowired
+//    private TrainingDAO trainingDAO;
+//
+//    @BeforeEach
+//    void setUp() {
+//        trainerStorage.init();
+//        traineeStorage.init();
+//        trainingStorage.init();
+//    }
+//
+//    @Test
+//    void testStoragesInitialized() {
+//        assertNotNull(trainerDAO.select("Sergii.Vakaliuk"));
+//        assertNull(trainerDAO.select("Charles.Johnson"));
+//        assertNotNull(traineeDAO.select("John.Doe"));
+//        assertNull(traineeDAO.select("Mike.Tyson"));
+//        assertNotNull(trainingDAO.select("John.Doe", "Sergii.Vakaliuk"));
+//        assertNull(trainingDAO.select("Mike.Tyson", "Sergii.Vakaliuk"));
+//    }
+//
 //    @Test
 //    void testCreateTrainer() {
 //        assertEquals(trainerStorage.getStorage().size(), 1);

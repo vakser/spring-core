@@ -1,8 +1,8 @@
 package com.epam.learn.springcore;
 
-import com.epam.learn.springcore.dao.TraineeDAO;
-import com.epam.learn.springcore.dao.TrainerDAO;
-import com.epam.learn.springcore.dao.TrainingDAO;
+//import com.epam.learn.springcore.dao.TraineeDAO;
+//import com.epam.learn.springcore.dao.TrainerDAO;
+//import com.epam.learn.springcore.dao.TrainingDAO;
 import com.epam.learn.springcore.entity.Trainee;
 import com.epam.learn.springcore.entity.Trainer;
 import com.epam.learn.springcore.entity.Training;
@@ -25,22 +25,22 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class ServiceTests {
-    @InjectMocks
-    private TrainerService trainerService;
-    @Mock
-    private TrainerDAO trainerDAO;
-    private final Map<String, Trainer> trainers = new HashMap<>();
-    @InjectMocks
-    private TraineeService traineeService;
-    @Mock
-    private TraineeDAO traineeDAO;
-    private final Map<String, Trainee> trainees = new HashMap<>();
-    @InjectMocks
-    private TrainingService trainingService;
-    @Mock
-    private TrainingDAO trainingDAO;
-    private final Map<String, Training> trainings = new HashMap<>();
-
+//    @InjectMocks
+//    private TrainerService trainerService;
+//    @Mock
+//    private TrainerDAO trainerDAO;
+//    private final Map<String, Trainer> trainers = new HashMap<>();
+//    @InjectMocks
+//    private TraineeService traineeService;
+//    @Mock
+//    private TraineeDAO traineeDAO;
+//    private final Map<String, Trainee> trainees = new HashMap<>();
+//    @InjectMocks
+//    private TrainingService trainingService;
+//    @Mock
+//    private TrainingDAO trainingDAO;
+//    private final Map<String, Training> trainings = new HashMap<>();
+//
 //    @BeforeEach
 //    public void setUp() {
 //        // Prepare mock data

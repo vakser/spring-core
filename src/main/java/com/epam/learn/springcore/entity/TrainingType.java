@@ -14,8 +14,8 @@ public class TrainingType {
     @Column(nullable = false, unique = true)
     @NotBlank(message = "Name is mandatory")
     private String name;
-    @OneToMany(mappedBy = "trainingType")
-    private List<Training> trainings;
-    @OneToMany(mappedBy = "specialization")
-    private List<Trainer> trainers;
+//    @OneToMany(mappedBy = "trainingType", fetch = FetchType.LAZY)
+//    private List<Training> trainings;
+//    @OneToMany(mappedBy = "specialization", fetch = FetchType.LAZY)
+//    private List<Trainer> trainers;
 }
