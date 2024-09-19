@@ -1,21 +1,34 @@
 package com.epam.learn.springcore.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
+@Setter
+@Entity
 public class Training {
-    private String traineeUsername;
-    private String trainerUsername;
-    private String trainingName;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @ManyToOne
+    @JoinColumn(name = "trainee_id")
+    private Trainee trainee;
+    @ManyToOne
+    @JoinColumn(name = "trainer_id")
+    private Trainer trainer;
+    @ManyToOne
+    @JoinColumn(name = "training_type_id")
     private TrainingType trainingType;
-    private Date trainingDate;
-    private int trainingDuration;
+    @Column(nullable = false)
+    @NotBlank(message = "Training name is mandatory")
+    private String trainingName;
+    @Column(nullable = false)
+    @NotBlank(message = "Training date is mandatory")
+    private LocalDate trainingDate;
+    @Column(nullable = false)
+    @NotBlank(message = "Training duration is mandatory")
+    private Integer trainingDuration;
 }

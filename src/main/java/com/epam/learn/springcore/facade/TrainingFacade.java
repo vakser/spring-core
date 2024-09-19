@@ -21,13 +21,13 @@ public class TrainingFacade {
     }
 
     public boolean assignTrainingSession(Training training) {
-        Trainee trainee = traineeService.selectTrainee(training.getTraineeUsername());
-        Trainer trainer = trainerService.selectTrainer(training.getTrainerUsername());
-        Training trainingInStorage = trainingService.selectTraining(training.getTraineeUsername(), training.getTrainerUsername());
-        if (trainee != null && trainer != null && trainee.isActive() && trainer.isActive() && trainingInStorage == null) {
-            trainingService.createTraining(training);
-            return true;
-        }
+//        Trainee trainee = traineeService.selectTrainee(training.getTrainee().getUsername());
+//        Trainer trainer = trainerService.selectTrainer(training.getTrainer().getUsername());
+//        Training trainingInStorage = trainingService.getTraining(trainee.getUsername(), trainer.getUsername());
+//        if (trainee.isActive() && trainer.isActive() && trainingInStorage == null) {
+//            trainingService.addTraining(training);
+//            return true;
+//        }
         return false;
     }
 }

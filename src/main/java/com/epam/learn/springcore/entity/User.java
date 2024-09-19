@@ -1,23 +1,32 @@
 package com.epam.learn.springcore.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
-import lombok.extern.jackson.Jacksonized;
+
 
 @Getter
 @Setter
-@SuperBuilder
-@Jacksonized
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonIgnoreProperties("password")
+@Entity
 public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Integer id;
+    @Column(nullable = false)
+    @NotBlank(message = "First name is mandatory")
     protected String firstName;
+    @Column(nullable = false)
+    @NotBlank(message = "Last name is mandatory")
     protected String lastName;
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "Username is mandatory")
     protected String username;
+    @Column(nullable = false)
+    @NotBlank(message = "Password is mandatory")
     protected String password;
-    protected boolean isActive;
+    @Column(nullable = false)
+    @NotNull(message = "Activation status is mandatory")
+    protected Boolean isActive;
 
 }
