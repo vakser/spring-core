@@ -5,11 +5,13 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Trainee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,8 +25,9 @@ public class Trainee {
             name = "trainee_trainer",
             joinColumns = @JoinColumn(name = "trainee_id"),
             inverseJoinColumns = @JoinColumn(name = "trainer_id"))
-    private Set<Trainer> trainers;
-    @OneToOne(cascade = CascadeType.ALL)
+    private List<Trainer> trainers;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
+
 }

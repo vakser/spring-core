@@ -1,7 +1,6 @@
 package com.epam.learn.springcore.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -9,26 +8,24 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Training {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "trainee_id")
     private Trainee trainee;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "trainer_id")
     private Trainer trainer;
-    @ManyToOne
-    @JoinColumn(name = "training_type_id")
-    private TrainingType trainingType;
     @Column(nullable = false)
-    @NotBlank(message = "Training name is mandatory")
     private String trainingName;
+    // should it be date and time for the case several trainings are planned for the same trainer on the same date???
     @Column(nullable = false)
-    @NotBlank(message = "Training date is mandatory")
     private LocalDate trainingDate;
     @Column(nullable = false)
-    @NotBlank(message = "Training duration is mandatory")
     private Integer trainingDuration;
 }
