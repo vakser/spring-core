@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Trainer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,8 +25,9 @@ public class Trainer {
             name = "trainee_trainer",
             joinColumns = @JoinColumn(name = "trainer_id"),
             inverseJoinColumns = @JoinColumn(name = "trainee_id"))
-    private Set<Trainee> trainees;
-    @OneToOne(cascade = CascadeType.ALL)
+    private List<Trainee> trainees;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
+
 }
