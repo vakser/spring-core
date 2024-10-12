@@ -3,34 +3,44 @@ package com.epam.learn.springcore.specification;
 import com.epam.learn.springcore.entity.Trainee;
 import com.epam.learn.springcore.entity.Trainer;
 import com.epam.learn.springcore.entity.Training;
-import jakarta.persistence.criteria.*;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
 
-@RequiredArgsConstructor
-public class TrainerTrainingSpecification implements Specification<Training> {
-    private final TrainerTrainingSearchCriteria criteria;
+public class TrainerTrainingSpecification {
+    public static Specification<Training> trainingsByCriteria(String username, LocalDate periodFrom, LocalDate periodTo, String traineeName) {
+        return (root, query, criteriaBuilder) -> {
+            // Join Trainee entity to filter by username
+            Join<Training, Trainer> trainerJoin = root.join("trainer", JoinType.INNER);
+            Join<Training, Trainee> traineeJoin = root.join("trainee", JoinType.INNER);
 
-    @Override
-    public Predicate toPredicate(Root<Training> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-        List<Predicate> predicates = new ArrayList<>();
-        Join<Training, Trainer> trainerJoin = root.join("trainer");
-        Join<Training, Trainee> traineeJoin = root.join("trainee");
-        if (criteria.getUsername() != null) {
-            predicates.add(criteriaBuilder.equal(trainerJoin.get("user").get("username"), criteria.getUsername()));
-        }
-        if (criteria.getDateFrom() != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("trainingDate"), criteria.getDateFrom()));
-        }
-        if (criteria.getDateTo() != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("trainingDate"), criteria.getDateTo()));
-        }
-        if (criteria.getTraineeName() != null) {
-            predicates.add(criteriaBuilder.equal(traineeJoin.get("user").get("username"), criteria.getTraineeName()));
-        }
-        return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            // Predicate to combine conditions
+            Predicate predicate = criteriaBuilder.conjunction();
+
+            // Filter by Trainer username
+            if (username != null && !username.isEmpty()) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(trainerJoin.get("user").get("username"), username));
+            }
+
+            // Filter by training period (from date)
+            if (periodFrom != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.greaterThanOrEqualTo(root.get("trainingDate"), periodFrom));
+            }
+
+            // Filter by training period (to date)
+            if (periodTo != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.lessThanOrEqualTo(root.get("trainingDate"), periodTo));
+            }
+
+            // Filter by traineeName
+            if (traineeName != null && !traineeName.isEmpty()) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(traineeJoin.get("user").get("username"), traineeName));
+            }
+
+            return predicate;
+        };
     }
 }

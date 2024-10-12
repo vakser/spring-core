@@ -1,13 +1,11 @@
 package com.epam.learn.springcore.controller;
 
 import com.epam.learn.springcore.dto.*;
-import com.epam.learn.springcore.entity.Trainee;
+import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.TraineeService;
 import com.epam.learn.springcore.service.UserService;
-import com.epam.learn.springcore.specification.TraineeTrainingSearchCriteria;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,11 +16,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/trainees")
@@ -31,6 +29,7 @@ import java.util.Objects;
 public class TraineeController {
     private final TraineeService traineeService;
     private final UserService userService;
+    private final AuthenticationFacade authenticationFacade;
 
     @Operation(summary = "Register Trainee", description = "Is used to save trainee into database")
     @ApiResponse(responseCode = "201", description = "Http Status 201 CREATED")
@@ -50,10 +49,10 @@ public class TraineeController {
     })
     @GetMapping("/{username}")
     public ResponseEntity<GetTraineeProfileResponse> getTraineeProfile(@Valid @PathVariable String username, @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername)) {
                 return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
@@ -108,10 +107,10 @@ public class TraineeController {
     })
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> deleteTraineeProfile(@PathVariable String username, @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername)) {
                 return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
@@ -138,10 +137,10 @@ public class TraineeController {
     public ResponseEntity<Void> changeActivationStatus(@PathVariable String username,
                                                        @Valid @RequestBody ActivationRequest activationRequest,
                                                        @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername) || !username.equals(activationRequest.getUsername())) {
                 return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
@@ -168,10 +167,10 @@ public class TraineeController {
     })
     @GetMapping("/{username}/trainers-not-assigned-to-trainee")
     public ResponseEntity<List<TrainerResponse>> getNotAssignedToTrainee(@PathVariable String username, @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername)) {
                 return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
@@ -199,10 +198,10 @@ public class TraineeController {
     public ResponseEntity<List<TrainerResponse>> updateTraineeTrainers(@PathVariable String username,
                                                                        @Valid @RequestBody UpdateTraineeTrainersRequest request,
                                                                        @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername) || !username.equals(request.getTraineeUsername())) {
                 return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
@@ -232,16 +231,15 @@ public class TraineeController {
                                                               @RequestParam(required = false) String trainerName,
                                                               @RequestParam(required = false) String trainingType,
                                                               @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername)) {
                 return new  ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             if (userService.authenticate(authUsername, authPassword)) {
-                TraineeTrainingSearchCriteria criteria = new TraineeTrainingSearchCriteria(username, periodFrom, periodTo, trainerName,  trainingType);
-                List<TraineeTrainingResponse> trainings = traineeService.getTraineeTrainings(criteria);
+                List<TraineeTrainingResponse> trainings = traineeService.getTraineeTrainings(username, periodFrom, periodTo, trainerName,  trainingType);
                 return new ResponseEntity<>(trainings, HttpStatus.OK);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

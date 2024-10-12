@@ -1,6 +1,7 @@
 package com.epam.learn.springcore.controller;
 
 import com.epam.learn.springcore.dto.ChangePasswordRequest;
+import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,13 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Objects;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/login")
 @RequiredArgsConstructor
 public class LoginController {
     private final UserService userService;
+    private final AuthenticationFacade authenticationFacade;
 
     @Operation(summary = "Login User", description = "Is used to login user to application")
     @ApiResponses(value = {
@@ -28,10 +30,10 @@ public class LoginController {
     })
     @GetMapping
     public ResponseEntity<Void> login(@RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String username = token.split(":")[0];
-            String password = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String username = token.get()[0];
+            String password = token.get()[1];
             if (userService.authenticate(username, password)) {
                 return ResponseEntity.ok().build();
             } else {

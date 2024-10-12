@@ -4,38 +4,50 @@ import com.epam.learn.springcore.entity.Trainee;
 import com.epam.learn.springcore.entity.Trainer;
 import com.epam.learn.springcore.entity.Training;
 import com.epam.learn.springcore.entity.TrainingType;
-import jakarta.persistence.criteria.*;
-import lombok.RequiredArgsConstructor;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
 
-@RequiredArgsConstructor
-public class TraineeTrainingSpecification implements Specification<Training> {
-    private final TraineeTrainingSearchCriteria criteria;
+public class TraineeTrainingSpecification {
+    public static Specification<Training> trainingsByCriteria(String username, LocalDate periodFrom, LocalDate periodTo, String trainerName, String trainingType) {
+        return (root, query, criteriaBuilder) -> {
+            // Join Trainee entity to filter by username
+            Join<Training, Trainee> traineeJoin = root.join("trainee", JoinType.INNER);
+            Join<Training, Trainer> trainerJoin = root.join("trainer", JoinType.INNER);
 
-    @Override
-    public Predicate toPredicate(Root<Training> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-        List<Predicate> predicates = new ArrayList<>();
-        Join<Training, Trainee> traineeJoin = root.join("trainee");
-        Join<Training, Trainer> trainerJoin = root.join("trainer");
-        if (criteria.getUsername() != null) {
-            predicates.add(criteriaBuilder.equal(traineeJoin.get("user").get("username"), criteria.getUsername()));
-        }
-        if (criteria.getDateFrom() != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("trainingDate"), criteria.getDateFrom()));
-        }
-        if (criteria.getDateTo() != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("trainingDate"), criteria.getDateTo()));
-        }
-        if (criteria.getTrainerName() != null) {
-            predicates.add(criteriaBuilder.equal(trainerJoin.get("user").get("username"), criteria.getTrainerName()));
-        }
-        if (criteria.getTrainingType() != null) {
-            Join<Trainer, TrainingType> trainingTypeJoin = trainerJoin.join("specialization");
-            predicates.add(criteriaBuilder.equal(trainingTypeJoin.get("name"), criteria.getTrainingType()));
-        }
-        return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            // Predicate to combine conditions
+            Predicate predicate = criteriaBuilder.conjunction();
+
+            // Filter by Trainee username
+            if (username != null && !username.isEmpty()) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(traineeJoin.get("user").get("username"), username));
+            }
+
+            // Filter by training period (from date)
+            if (periodFrom != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.greaterThanOrEqualTo(root.get("trainingDate"), periodFrom));
+            }
+
+            // Filter by training period (to date)
+            if (periodTo != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.lessThanOrEqualTo(root.get("trainingDate"), periodTo));
+            }
+
+            // Filter by trainerName
+            if (trainerName != null && !trainerName.isEmpty()) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(trainerJoin.get("user").get("username"), trainerName));
+            }
+
+            // Filter by trainingType
+            if (trainingType != null && !trainingType.isEmpty()) {
+                Join<Trainer, TrainingType> trainingTypeJoin = trainerJoin.join("specialization");
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(trainingTypeJoin.get("name"), trainingType));
+            }
+
+            return predicate;
+        };
     }
 }

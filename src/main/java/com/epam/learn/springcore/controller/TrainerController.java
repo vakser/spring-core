@@ -1,9 +1,9 @@
 package com.epam.learn.springcore.controller;
 
 import com.epam.learn.springcore.dto.*;
+import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.TrainerService;
 import com.epam.learn.springcore.service.UserService;
-import com.epam.learn.springcore.specification.TrainerTrainingSearchCriteria;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/trainers")
@@ -29,6 +29,7 @@ import java.util.Objects;
 public class TrainerController {
     private final TrainerService trainerService;
     private final UserService userService;
+    private final AuthenticationFacade authenticationFacade;
 
     @Operation(summary = "Register Trainer", description = "Is used to save trainer into database")
     @ApiResponse(responseCode = "201", description = "Http Status 201 CREATED")
@@ -48,10 +49,10 @@ public class TrainerController {
     })
     @GetMapping("/{username}")
     public ResponseEntity<GetTrainerProfileResponse> getTrainerProfile(@PathVariable String username, @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username mismatch");
             }
@@ -78,10 +79,10 @@ public class TrainerController {
     public ResponseEntity<TrainerUpdateResponse> updateTrainerProfile(@PathVariable String username,
                                                                       @Valid @RequestBody TrainerUpdateRequest trainerUpdateRequest,
                                                                       @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername) || !username.equals(trainerUpdateRequest.getUsername())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username mismatch");
             }
@@ -108,10 +109,10 @@ public class TrainerController {
     public ResponseEntity<Void> changeActivationStatus(@PathVariable String username,
                                                        @Valid @RequestBody ActivationRequest activationRequest,
                                                        @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername) || !username.equals(activationRequest.getUsername())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username mismatch");
             }
@@ -142,16 +143,15 @@ public class TrainerController {
                                                                              @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate periodTo,
                                                                              @RequestParam(required = false) String traineeName,
                                                                              @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username mismatch");
             }
             if (userService.authenticate(authUsername, authPassword)) {
-                TrainerTrainingSearchCriteria criteria = new TrainerTrainingSearchCriteria(username, periodFrom, periodTo, traineeName);
-                List<TrainerTrainingResponse> trainings = trainerService.getTrainerTrainings(criteria);
+                List<TrainerTrainingResponse> trainings = trainerService.getTrainerTrainings(username, periodFrom, periodTo, traineeName);
                 return new ResponseEntity<>(trainings, HttpStatus.OK);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -173,10 +173,10 @@ public class TrainerController {
     public ResponseEntity<Void> addTraining(@PathVariable String username,
                                             @Valid @RequestBody AddTrainingRequest addTrainingRequest,
                                             @RequestHeader HttpHeaders headers) {
-        if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-            String token = Objects.requireNonNull(headers.get(HttpHeaders.AUTHORIZATION)).get(0);
-            String authUsername = token.split(":")[0];
-            String authPassword = token.split(":")[1];
+        Optional<String[]> token = authenticationFacade.extractAndValidateAuthToken(headers);
+        if (token.isPresent()) {
+            String authUsername = token.get()[0];
+            String authPassword = token.get()[1];
             if (!username.equals(authUsername) || !username.equals(addTrainingRequest.getTrainerUsername())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username mismatch");
             }

@@ -2,9 +2,9 @@ package com.epam.learn.springcore;
 
 import com.epam.learn.springcore.controller.TrainerController;
 import com.epam.learn.springcore.dto.*;
+import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.TrainerService;
 import com.epam.learn.springcore.service.UserService;
-import com.epam.learn.springcore.specification.TrainerTrainingSearchCriteria;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +35,8 @@ public class TrainerControllerTest {
     private TrainerService trainerService;
     @MockBean
     private UserService userService;
+    @MockBean
+    private AuthenticationFacade authenticationFacade;
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -141,12 +143,11 @@ public class TrainerControllerTest {
     @Test
     void testGetTrainerTrainings() throws Exception {
         String username = "John.Doe";
-        TrainerTrainingSearchCriteria criteria = new TrainerTrainingSearchCriteria(username, null, null, null);
         List<TrainerTrainingResponse> trainings = new ArrayList<>();
 
         String token = "John.Doe:password";
         when(userService.authenticate(anyString(), anyString())).thenReturn(true);
-        when(trainerService.getTrainerTrainings(criteria)).thenReturn(trainings);
+        when(trainerService.getTrainerTrainings(username, any(), any(), anyString())).thenReturn(trainings);
 
         mockMvc.perform(get("/api/trainers/{username}/trainings", username)
                         .header(HttpHeaders.AUTHORIZATION, token))

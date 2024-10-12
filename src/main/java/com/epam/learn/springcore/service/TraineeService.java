@@ -10,12 +10,14 @@ import com.epam.learn.springcore.entity.Training;
 import com.epam.learn.springcore.entity.User;
 import com.epam.learn.springcore.exception.TraineeNotFoundException;
 import com.epam.learn.springcore.exception.TrainerNotFoundException;
-import com.epam.learn.springcore.specification.TraineeTrainingSearchCriteria;
+import com.epam.learn.springcore.specification.TraineeTrainingSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -115,8 +117,9 @@ public class TraineeService {
         return traineeTrainers.stream().map(this::convertTrainerToTrainerResponse).toList();
     }
 
-    public List<TraineeTrainingResponse> getTraineeTrainings(TraineeTrainingSearchCriteria criteria) {
-        List<Training> trainings = trainingRepository.findByCriteria(criteria);
+    public List<TraineeTrainingResponse> getTraineeTrainings(String username, LocalDate periodFrom, LocalDate periodTo, String trainerName, String trainingType) {
+        Specification<Training> spec = TraineeTrainingSpecification.trainingsByCriteria(username, periodFrom, periodTo, trainerName, trainingType);
+        List<Training> trainings = trainingRepository.findAll(spec);
         return trainings.stream().map(this::convertTrainingToTraineeTrainingResponse).toList();
     }
 

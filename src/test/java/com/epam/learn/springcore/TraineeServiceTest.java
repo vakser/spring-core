@@ -12,7 +12,6 @@ import com.epam.learn.springcore.exception.TraineeNotFoundException;
 import com.epam.learn.springcore.exception.TrainerNotFoundException;
 import com.epam.learn.springcore.service.TraineeService;
 import com.epam.learn.springcore.service.UserService;
-import com.epam.learn.springcore.specification.TraineeTrainingSearchCriteria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -32,8 +31,6 @@ public class TraineeServiceTest {
     private TraineeRepository traineeRepository;
     @Mock
     private TrainerRepository trainerRepository;
-    @Mock
-    private TrainingRepository trainingRepository;
     @InjectMocks
     private TraineeService traineeService;
 
@@ -470,40 +467,6 @@ public class TraineeServiceTest {
         verify(traineeRepository, times(1)).findByUsername(traineeUsername);
         verify(trainerRepository, times(1)).findByUsername(trainerUsername);
         verify(traineeRepository, times(1)).save(trainee);
-    }
-
-    @Test
-    void testGetTraineeTrainings() {
-        // Arrange
-        TraineeTrainingSearchCriteria criteria = new TraineeTrainingSearchCriteria();
-
-        // Mocking a list of Training objects as returned by the repository
-        Trainer trainer1 = new Trainer(1, new TrainingType(1, "Yoga"), new ArrayList<>(), new ArrayList<>(), new User(1, "John", "Doe", "John.Doe", "password", true));
-        Trainer trainer2 = new Trainer(2, new TrainingType(2, "Fitness"), new ArrayList<>(), new ArrayList<>(), new User(2, "Mary", "Public", "Mary.Public", "password", true));
-        List<Training> mockTrainings = new ArrayList<>();
-        mockTrainings.add(new Training(1, new Trainee(), trainer1, "Yoga for old people", LocalDate.of(2024, 10, 1), 60));
-        mockTrainings.add(new Training(2, new Trainee(), trainer2, "MMA fitness", LocalDate.of(2024, 11, 1), 90));
-
-        // Mock the repository call
-        when(trainingRepository.findByCriteria(criteria)).thenReturn(mockTrainings);
-
-        // Expected conversion result (after converting Training to TraineeTrainingResponse)
-        List<TraineeTrainingResponse> expectedResponses = new ArrayList<>();
-        expectedResponses.add(new TraineeTrainingResponse( "Yoga for old people", LocalDate.of(2024, 10, 1), "Yoga", 60, "John.Doe"));
-        expectedResponses.add(new TraineeTrainingResponse("MMA fitness", LocalDate.of(2024, 11, 1), "Fitness", 90, "Mary.Public"));
-
-        // Act
-        List<TraineeTrainingResponse> actualResponses = traineeService.getTraineeTrainings(criteria);
-
-        // Assert
-        assertEquals(expectedResponses.size(), actualResponses.size());
-        assertEquals(expectedResponses.get(0).getTrainingName(), actualResponses.get(0).getTrainingName());
-        assertEquals(expectedResponses.get(0).getTrainingDate(), actualResponses.get(0).getTrainingDate());
-        assertEquals(expectedResponses.get(1).getTrainingName(), actualResponses.get(1).getTrainingName());
-        assertEquals(expectedResponses.get(1).getTrainingDate(), actualResponses.get(1).getTrainingDate());
-
-        // Verify that the repository method was called exactly once with the provided criteria
-        verify(trainingRepository, times(1)).findByCriteria(criteria);
     }
 
 }

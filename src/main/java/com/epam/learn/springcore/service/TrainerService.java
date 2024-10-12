@@ -9,13 +9,14 @@ import com.epam.learn.springcore.entity.*;
 import com.epam.learn.springcore.exception.TraineeNotFoundException;
 import com.epam.learn.springcore.exception.TrainerNotFoundException;
 import com.epam.learn.springcore.exception.TrainingTypeNotFoundException;
-import com.epam.learn.springcore.specification.TrainerTrainingSearchCriteria;
+import com.epam.learn.springcore.specification.TrainerTrainingSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -83,8 +84,9 @@ public class TrainerService {
         log.info("Activation status changed successfully for the trainer: {}", trainer.getUser().getUsername());
     }
 
-    public List<TrainerTrainingResponse> getTrainerTrainings(TrainerTrainingSearchCriteria criteria) {
-        List<Training> trainings = trainingRepository.findByCriteria(criteria);
+    public List<TrainerTrainingResponse> getTrainerTrainings(String username, LocalDate periodFrom, LocalDate periodTo, String traineeName) {
+        Specification<Training> spec = TrainerTrainingSpecification.trainingsByCriteria(username, periodFrom, periodTo, traineeName);
+        List<Training> trainings = trainingRepository.findAll(spec);
         return trainings.stream().map(this::convertTrainingToTrainerTrainingResponse).toList();
     }
 
@@ -95,6 +97,10 @@ public class TrainerService {
                 .orElseThrow(() -> new TraineeNotFoundException("Trainee " + addTrainingRequest.getTraineeUsername() + " not found"));
         Trainer trainer = trainerRepository.findByUsername(addTrainingRequest.getTrainerUsername())
                 .orElseThrow(() -> new TrainerNotFoundException("Trainer " + addTrainingRequest.getTrainerUsername() + " not found"));
+        if (!trainer.getTrainees().contains(trainee)) {
+            log.warn("The trainee {} have not requested the training by the trainer {}", trainee.getUser().getUsername(), trainer.getUser().getUsername());
+            return;
+        }
         List<Training> trainerTrainings = trainingRepository.findAll();
         for (Training training : trainerTrainings) {
             if (training.getTrainingDate().equals(addTrainingRequest.getTrainingDate())) {
@@ -102,9 +108,9 @@ public class TrainerService {
                         training.getTrainingName(), trainee.getUser().getUsername(), training.getTrainingDate());
                 return;
             }
-            // ask if local date and time supposed to be used ???
+            // ask if local date and time supposed to be used instead of just local date ???
 //            if (training.getTrainingDate().plus(training.getTrainingDuration(), ChronoUnit.MINUTES).isAfter(addTrainingRequest.getTrainingDate())) {
-//                log.warn("The requested trainee overlapping with already assigned training");
+//                log.warn("The requested trainee training overlapping with already assigned training");
 //                return;
 //            }
         }
