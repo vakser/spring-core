@@ -1,14 +1,20 @@
 package com.epam.learn.springcore.service;
 
 import com.epam.learn.springcore.dao.TraineeRepository;
-import com.epam.learn.springcore.dao.UserRepository;
+import com.epam.learn.springcore.dao.TrainerRepository;
+import com.epam.learn.springcore.dao.TrainingRepository;
+import com.epam.learn.springcore.dto.*;
 import com.epam.learn.springcore.entity.Trainee;
 import com.epam.learn.springcore.entity.Trainer;
 import com.epam.learn.springcore.entity.Training;
 import com.epam.learn.springcore.entity.User;
-import jakarta.persistence.EntityNotFoundException;
+import com.epam.learn.springcore.exception.TraineeNotFoundException;
+import com.epam.learn.springcore.exception.TrainerNotFoundException;
+import com.epam.learn.springcore.specification.TraineeTrainingSpecification;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,126 +22,157 @@ import java.util.List;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class TraineeService {
     private final TraineeRepository traineeRepository;
     private final UserService userService;
-
-    public TraineeService(TraineeRepository traineeRepository, UserService userService) {
-        this.traineeRepository = traineeRepository;
-        this.userService = userService;
-    }
+    private final TrainingRepository trainingRepository;
+    private final TrainerRepository trainerRepository;
 
     @Transactional
-    public void createTrainee(Trainee trainee) {
-        User user = trainee.getUser();
+    public UserResponse createTrainee(TraineeRegistrationRequest traineeRegistrationRequest) {
+        User user = new User();
+        user.setFirstName(traineeRegistrationRequest.getFirstName());
+        user.setLastName(traineeRegistrationRequest.getLastName());
         log.info("Calculating trainee username");
-        user.setUsername(userService.calculateUsername(user.getFirstName(), user.getLastName()));
-        log.info("Trainee username calculated");
+        user.setUsername(userService.calculateUsername(traineeRegistrationRequest.getFirstName(), traineeRegistrationRequest.getLastName()));
+        log.info("Trainee username calculated: {}", user.getUsername());
         log.info("Generating trainee password");
         user.setPassword(userService.generateRandomPassword());
-        log.info("Trainee password generated");
+        log.info("Trainee password generated: {}", user.getPassword());
+        user.setIsActive(false);
         log.info("Creating trainee: {}", user.getUsername());
-//        userRepository.save(user);
+        Trainee trainee = new Trainee();
+        trainee.setDateOfBirth(traineeRegistrationRequest.getDateOfBirth());
+        trainee.setAddress(traineeRegistrationRequest.getAddress());
+        trainee.setUser(user);
         traineeRepository.save(trainee);
         log.info("Successfully created trainee: {}", user.getUsername());
+        UserResponse userResponse = new UserResponse();
+        userResponse.setUsername(trainee.getUser().getUsername());
+        userResponse.setPassword(trainee.getUser().getPassword());
+        return userResponse;
     }
 
     @Transactional
-    public void updateTrainee(Trainee trainee) {
-        if (userService.authenticate(trainee.getUser().getUsername(), trainee.getUser().getPassword())) {
-            log.info("Updating trainee: {}", trainee.getUser().getUsername());
-            traineeRepository.save(trainee);
-            log.info("Successfully updated trainee: {}", trainee.getUser().getUsername());
-        } else {
-            log.warn("No trainee {} found or username and password not matching", trainee.getUser().getUsername());
-        }
+    public TraineeUpdateResponse updateTrainee(TraineeUpdateRequest traineeUpdateRequest) {
+        Trainee trainee = traineeRepository.findByUsername(traineeUpdateRequest.getUsername())
+                .orElseThrow(() -> new TraineeNotFoundException("Trainee " + traineeUpdateRequest.getUsername() + " not found"));
+        log.info("Updating trainee: {}", trainee.getUser().getUsername());
+        trainee.getUser().setFirstName(traineeUpdateRequest.getFirstName());
+        trainee.getUser().setLastName(traineeUpdateRequest.getLastName());
+        trainee.setDateOfBirth(traineeUpdateRequest.getDateOfBirth());
+        trainee.setAddress(traineeUpdateRequest.getAddress());
+        Trainee updatedTrainee = traineeRepository.save(trainee);
+        log.info("Successfully updated trainee: {}", trainee.getUser().getUsername());
+        return convertTraineeToTraineeUpdateResponse(updatedTrainee);
+    }
+
+    public void deleteTrainee(String username) {
+        log.info("Deleting trainee: {}", username);
+        Trainee trainee = traineeRepository.findByUsername(username)
+                .orElseThrow(() -> new TraineeNotFoundException("Trainee " + username + " not found"));
+        traineeRepository.delete(trainee);
+        log.info("Successfully deleted trainee: {}", username);
+    }
+
+    public GetTraineeProfileResponse selectTrainee(String username) {
+        log.info("Selecting trainee: {}", username);
+        Trainee trainee = traineeRepository.findByUsername(username)
+                .orElseThrow(() -> new TraineeNotFoundException("Trainee " + username + " not found"));
+        return convertTraineeToGetTraineeProfileResponse(trainee);
     }
 
     @Transactional
-    public void deleteTrainee(String username, String password) {
-        if (userService.authenticate(username, password)) {
-            log.info("Deleting trainee: {}", username);
-            traineeRepository.deleteByUsername(username);
-            log.info("Successfully deleted trainee: {}", username);
-        } else {
-            log.warn("No trainee {} found or username and password for trainee not matching", username);
-        }
+    public void changeTraineeActivationStatus(ActivationRequest activationRequest) {
+        Trainee trainee = traineeRepository.findByUsername(activationRequest.getUsername())
+                .orElseThrow(() -> new TraineeNotFoundException("Trainee " + activationRequest.getUsername() + " not found"));
+        log.info("Changing activation status of the trainee: {}", trainee.getUser().getUsername());
+        trainee.getUser().setIsActive(activationRequest.getIsActive());
+        traineeRepository.save(trainee);
+        log.info("Activation status changed successfully for the trainee: {}", trainee.getUser().getUsername());
     }
 
-    public Trainee selectTrainee(String username, String password) {
-        if (userService.authenticate(username, password)) {
-            log.info("Selecting trainee: {}", username);
-            return traineeRepository.findByUsername(username);
-        } else {
-            log.warn("No trainee {} found or username and password not matching", username);
-            return null;
-        }
+    public List<TrainerResponse> findActiveTrainersNotAssignedToTrainee(String username) {
+        log.info("Searching active trainers not assigned to trainee: {}", username);
+        return traineeRepository.findActiveTrainersNotAssignedToTrainee(username)
+                .stream().map(this::convertTrainerToTrainerResponse).toList();
     }
 
     @Transactional
-    public void changePassword(String username, String oldPassword, String newPassword) {
-        if (userService.authenticate(username, oldPassword)) {
-            log.info("Changing password for trainee: {}", username);
-            Trainee trainee = traineeRepository.findByUsername(username);
-            trainee.getUser().setPassword(newPassword);
-            traineeRepository.save(trainee);
-            log.info("Password for trainee {} changed", username);
-        } else {
-            log.warn("No trainee {} found or username and password not matching", username);
+    public List<TrainerResponse> updateTraineeTrainers(UpdateTraineeTrainersRequest request) {
+        Trainee trainee = traineeRepository.findByUsername(request.getTraineeUsername())
+                .orElseThrow(() -> new TraineeNotFoundException("Trainee " + request.getTraineeUsername() + " not found"));
+        List<String> trainersNames = request.getTrainerUsernames();
+        List<Trainer> traineeTrainers = trainee.getTrainers();
+        for (String trainerName : trainersNames) {
+            Trainer trainer = trainerRepository.findByUsername(trainerName)
+                    .orElseThrow(() -> new TrainerNotFoundException("Trainer " + trainerName + " not found"));
+            if (!traineeTrainers.contains(trainer) && trainer.getUser().getIsActive()) {
+                traineeTrainers.add(trainer);
+            }
         }
+        trainee.setTrainers(traineeTrainers);
+        traineeRepository.save(trainee);
+        return traineeTrainers.stream().map(this::convertTrainerToTrainerResponse).toList();
     }
 
-    @Transactional
-    public void activateTrainee(Trainee trainee) {
-        if (userService.authenticate(trainee.getUser().getUsername(), trainee.getUser().getPassword())) {
-            log.info("Activating trainee: {}", trainee.getUser().getUsername());
-            trainee.getUser().setIsActive(true);
-            traineeRepository.save(trainee);
-            log.info("Successfully activated trainee: {}", trainee.getUser().getUsername());
-        } else {
-            log.warn("No trainee {} found or username and password for the trainee not matching",
-                    trainee.getUser().getUsername());
-        }
+    public List<TraineeTrainingResponse> getTraineeTrainings(String username, LocalDate periodFrom, LocalDate periodTo, String trainerName, String trainingType) {
+        Specification<Training> spec = TraineeTrainingSpecification.trainingsByCriteria(username, periodFrom, periodTo, trainerName, trainingType);
+        List<Training> trainings = trainingRepository.findAll(spec);
+        return trainings.stream().map(this::convertTrainingToTraineeTrainingResponse).toList();
     }
 
+    private TrainerResponse convertTrainerToTrainerResponse(Trainer trainer) {
+        return  TrainerResponse.builder()
+                .username(trainer.getUser().getUsername())
+                .firstName(trainer.getUser().getFirstName())
+                .lastName(trainer.getUser().getLastName())
+                .specializationId(trainer.getSpecialization().getId())
+                .build();
 
-    @Transactional
-    public void deactivateTrainee(Trainee trainee) {
-        if (userService.authenticate(trainee.getUser().getUsername(), trainee.getUser().getPassword())) {
-            log.info("Deactivating trainee: {}", trainee.getUser().getUsername());
-            trainee.getUser().setIsActive(false);
-            traineeRepository.save(trainee);
-            log.info("Successfully deactivated trainee: {}", trainee.getUser().getUsername());
-        } else {
-            log.warn("No trainee {} found or username and password for the trainee not matching",
-                    trainee.getUser().getUsername());
-        }
     }
 
-    public List<Training> getTraineeTrainingsByDateIntervalTrainerNameAndTrainingType(Trainee trainee, LocalDate fromDate,
-                                                                                      LocalDate toDate, String trainerUsername,
-                                                                                      String trainingType) {
-        if (userService.authenticate(trainee.getUser().getUsername(), trainee.getUser().getPassword())) {
-            log.info("Getting trainee {} trainings on {} by trainer {} from {} to {}",
-                    trainee.getUser().getUsername(), trainingType, trainerUsername, fromDate, toDate);
-            return traineeRepository.findByDateIntervalTrainerNameAndTrainingType(trainee.getUser().getUsername(),
-                    fromDate, toDate, trainerUsername, trainingType);
-        } else {
-            log.warn("No trainee {} found or username and password for the trainee not matching",
-                    trainee.getUser().getUsername());
-            return null;
-        }
+    private TraineeTrainingResponse convertTrainingToTraineeTrainingResponse(Training training) {
+        return TraineeTrainingResponse.builder()
+                .trainingName(training.getTrainingName())
+                .trainingDate(training.getTrainingDate())
+                .trainingType(training.getTrainer().getSpecialization().getName())
+                .trainingDuration(training.getTrainingDuration())
+                .trainerUsername(training.getTrainer().getUser().getUsername())
+                .build();
     }
 
-    public List<Trainer> getTrainersNotAssignedOnTrainee(Trainee trainee) {
-        if (userService.authenticate(trainee.getUser().getUsername(), trainee.getUser().getPassword())) {
-            log.info("Getting trainers list not assigned on trainee {}", trainee.getUser().getUsername());
-            return traineeRepository.findTrainersNotAssignedOnTrainee(trainee.getUser().getUsername());
-        } else {
-            log.warn("No trainee {} found or username and password for the trainee not matching",
-                    trainee.getUser().getUsername());
-            return null;
-        }
+    private TraineeUpdateResponse convertTraineeToTraineeUpdateResponse(Trainee trainee) {
+        return TraineeUpdateResponse.builder()
+                .username(trainee.getUser().getUsername())
+                .firstName(trainee.getUser().getFirstName())
+                .lastName(trainee.getUser().getLastName())
+                .dateOfBirth(trainee.getDateOfBirth())
+                .address(trainee.getAddress())
+                .isActive(trainee.getUser().getIsActive())
+                .trainersList(trainee.getTrainers())
+                .build();
+    }
+
+    private GetTraineeProfileResponse convertTraineeToGetTraineeProfileResponse(Trainee trainee) {
+        return GetTraineeProfileResponse.builder()
+                .firstName(trainee.getUser().getFirstName())
+                .lastName(trainee.getUser().getLastName())
+                .dateOfBirth(trainee.getDateOfBirth())
+                .address(trainee.getAddress())
+                .isActive(trainee.getUser().getIsActive())
+                .trainersList(trainee.getTrainers().stream().map(this::convertTrainerToTrainerListResponse).toList())
+                .build();
+    }
+
+    private TrainerListResponse convertTrainerToTrainerListResponse(Trainer trainer) {
+        return TrainerListResponse.builder()
+                .username(trainer.getUser().getUsername())
+                .firstName(trainer.getUser().getFirstName())
+                .lastName(trainer.getUser().getLastName())
+                .specializationId(trainer.getSpecialization().getId())
+                .build();
     }
 
 }
