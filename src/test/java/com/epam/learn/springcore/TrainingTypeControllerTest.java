@@ -2,97 +2,101 @@ package com.epam.learn.springcore;
 
 import com.epam.learn.springcore.controller.TrainingTypeController;
 import com.epam.learn.springcore.entity.TrainingType;
+import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.TrainingTypeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import com.epam.learn.springcore.service.UserService;
-import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(TrainingTypeController.class)
 public class TrainingTypeControllerTest {
-    @Autowired
-    private MockMvc mockMvc;
-    @MockBean
-    private TrainingTypeService trainingTypeService;
-    @MockBean
-    private UserService userService;
 
-    private List<TrainingType> mockTrainingTypes;
+    @Mock
+    private TrainingTypeService trainingTypeService;
+    @Mock
+    private UserService userService;
+    @Mock
+    private AuthenticationFacade authenticationFacade;
+    @InjectMocks
+    private TrainingTypeController trainingTypeController;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockTrainingTypes = Arrays.asList(
-                new TrainingType(1, "Yoga"),
-                new TrainingType(2, "Fitness")
-        );
     }
 
+    // Unit test for successful fetch of training types with valid authentication
     @Test
-    public void testGetAllTrainingTypes_Success() throws Exception {
-        // Mock user authentication success
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
+    void testGetAllTrainingTypes_Successful() {
+        // Arrange
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {"validUser", "validPassword"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate("validUser", "validPassword")).thenReturn(true);
+
+        List<TrainingType> mockTrainingTypes = Arrays.asList(new TrainingType(1, "Type1"), new TrainingType(2, "Type2"));
         when(trainingTypeService.getAllTrainingTypes()).thenReturn(mockTrainingTypes);
 
-        // Prepare headers with authorization
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "John.Doe:password");
+        // Act
+        ResponseEntity<List<TrainingType>> response = trainingTypeController.getAllTrainingTypes(headers);
 
-        // Perform the GET request
-        ResultActions response = mockMvc.perform(get("/api/training-types")
-                .headers(headers)
-                .contentType(MediaType.APPLICATION_JSON));
-
-        // Verify the response
-        response.andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(mockTrainingTypes.size()))
-                .andExpect(jsonPath("$[0].name").value("Yoga"))
-                .andExpect(jsonPath("$[1].name").value("Fitness"));
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockTrainingTypes, response.getBody());
+        verify(authenticationFacade, times(1)).extractAndValidateAuthToken(headers);
+        verify(userService, times(1)).authenticate("validUser", "validPassword");
+        verify(trainingTypeService, times(1)).getAllTrainingTypes();
     }
 
+    // Unit test for failed authentication
     @Test
-    public void testGetAllTrainingTypesUnauthorized() throws Exception {
-        // Mock user authentication failure
-        when(userService.authenticate(anyString(), anyString())).thenReturn(false);
-
-        // Prepare headers with authorization
+    void testGetAllTrainingTypes_Unauthorized_AuthenticationFailure() {
+        // Arrange
         HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "username:wrongpassword");
+        String[] validToken = {"validUser", "invalidPassword"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate("validUser", "invalidPassword")).thenReturn(false);
 
-        // Perform the GET request
-        ResultActions response = mockMvc.perform(get("/api/training-types")
-                .headers(headers)
-                .contentType(MediaType.APPLICATION_JSON));
+        // Act
+        ResponseEntity<List<TrainingType>> response = trainingTypeController.getAllTrainingTypes(headers);
 
-        // Expect unauthorized response
-        response.andExpect(status().isOk())
-                .andExpect(jsonPath("$").doesNotExist());
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(authenticationFacade, times(1)).extractAndValidateAuthToken(headers);
+        verify(userService, times(1)).authenticate("validUser", "invalidPassword");
+        verify(trainingTypeService, never()).getAllTrainingTypes();
     }
 
+    // Unit test for invalid token (missing or incorrect token)
     @Test
-    public void testGetAllTrainingTypesNoAuthHeader() throws Exception {
-        // Perform the GET request without the Authorization header
-        ResultActions response = mockMvc.perform(get("/api/training-types")
-                .contentType(MediaType.APPLICATION_JSON));
+    void testGetAllTrainingTypes_Unauthorized_InvalidToken() {
+        // Arrange
+        HttpHeaders headers = new HttpHeaders();
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.empty());
 
-        // Expect unauthorized response (or null list)
-        response.andExpect(status().isOk())
-                .andExpect(jsonPath("$").doesNotExist());
+        // Act
+        ResponseEntity<List<TrainingType>> response = trainingTypeController.getAllTrainingTypes(headers);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(authenticationFacade, times(1)).extractAndValidateAuthToken(headers);
+        verify(userService, never()).authenticate(anyString(), anyString());
+        verify(trainingTypeService, never()).getAllTrainingTypes();
     }
 }

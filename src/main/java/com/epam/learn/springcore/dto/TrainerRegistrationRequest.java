@@ -2,13 +2,13 @@ package com.epam.learn.springcore.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TrainerRegistrationRequest {
     @NotBlank(message = "First name is mandatory")
     private String firstName;
