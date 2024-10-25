@@ -123,7 +123,7 @@ public class TraineeService {
         return trainings.stream().map(this::convertTrainingToTraineeTrainingResponse).toList();
     }
 
-    private TrainerResponse convertTrainerToTrainerResponse(Trainer trainer) {
+    public TrainerResponse convertTrainerToTrainerResponse(Trainer trainer) {
         return  TrainerResponse.builder()
                 .username(trainer.getUser().getUsername())
                 .firstName(trainer.getUser().getFirstName())
@@ -133,7 +133,7 @@ public class TraineeService {
 
     }
 
-    private TraineeTrainingResponse convertTrainingToTraineeTrainingResponse(Training training) {
+    public TraineeTrainingResponse convertTrainingToTraineeTrainingResponse(Training training) {
         return TraineeTrainingResponse.builder()
                 .trainingName(training.getTrainingName())
                 .trainingDate(training.getTrainingDate())
@@ -143,7 +143,7 @@ public class TraineeService {
                 .build();
     }
 
-    private TraineeUpdateResponse convertTraineeToTraineeUpdateResponse(Trainee trainee) {
+    public TraineeUpdateResponse convertTraineeToTraineeUpdateResponse(Trainee trainee) {
         return TraineeUpdateResponse.builder()
                 .username(trainee.getUser().getUsername())
                 .firstName(trainee.getUser().getFirstName())
@@ -155,7 +155,7 @@ public class TraineeService {
                 .build();
     }
 
-    private GetTraineeProfileResponse convertTraineeToGetTraineeProfileResponse(Trainee trainee) {
+    public GetTraineeProfileResponse convertTraineeToGetTraineeProfileResponse(Trainee trainee) {
         return GetTraineeProfileResponse.builder()
                 .firstName(trainee.getUser().getFirstName())
                 .lastName(trainee.getUser().getLastName())
@@ -166,7 +166,7 @@ public class TraineeService {
                 .build();
     }
 
-    private TrainerListResponse convertTrainerToTrainerListResponse(Trainer trainer) {
+    public TrainerListResponse convertTrainerToTrainerListResponse(Trainer trainer) {
         return TrainerListResponse.builder()
                 .username(trainer.getUser().getUsername())
                 .firstName(trainer.getUser().getFirstName())

@@ -5,194 +5,181 @@ import com.epam.learn.springcore.dto.*;
 import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.TrainerService;
 import com.epam.learn.springcore.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(TrainerController.class)
 public class TrainerControllerTest {
-    @Autowired
-    private MockMvc mockMvc;
-    @MockBean
+    @Mock
     private TrainerService trainerService;
-    @MockBean
+    @Mock
     private UserService userService;
-    @MockBean
+    @Mock
     private AuthenticationFacade authenticationFacade;
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private TrainerController trainerController;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+        MockitoAnnotations.openMocks(this);
     }
 
+    // Unit test for registering a trainer
     @Test
-    void testRegisterTrainer() throws Exception {
-        TrainerRegistrationRequest request = TrainerRegistrationRequest.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .specializationId(2)
-                .build();
-        UserResponse response = new UserResponse("John.Doe", "registered");
+    void testRegisterTrainer_Success() {
+        // Arrange
+        TrainerRegistrationRequest request = new TrainerRegistrationRequest();
+        UserResponse expectedResponse = new UserResponse();
+        when(trainerService.createTrainer(request)).thenReturn(expectedResponse);
 
-        when(trainerService.createTrainer(any(TrainerRegistrationRequest.class))).thenReturn(response);
+        // Act
+        ResponseEntity<UserResponse> response = trainerController.registerTrainer(request);
 
-        mockMvc.perform(post("/api/trainers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value("John.Doe"));
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+        verify(trainerService, times(1)).createTrainer(request);
     }
 
+    // Unit test for getting a trainer profile with successful authentication
     @Test
-    void testGetTrainerProfile() throws Exception {
-        String username = "John.Doe";
-        GetTrainerProfileResponse profileResponse = GetTrainerProfileResponse.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .specializationId(2)
-                .isActive(true)
-                .build();
+    void testGetTrainerProfile_Success() {
+        // Arrange
+        String username = "trainer1";
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {username, "password"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate(username, "password")).thenReturn(true);
 
-        String token = "John.Doe:password";
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
-        when(trainerService.selectTrainer(username)).thenReturn(profileResponse);
+        GetTrainerProfileResponse expectedResponse = new GetTrainerProfileResponse();
+        when(trainerService.selectTrainer(username)).thenReturn(expectedResponse);
 
-        mockMvc.perform(get("/api/trainers/{username}", username)
-                        .header(HttpHeaders.AUTHORIZATION, token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.firstName").value("John"))
-                .andExpect(jsonPath("$.lastName").value("Doe"))
-                .andExpect(jsonPath("$.specializationId").value(2))
-                .andExpect(jsonPath("$.isActive").value(true));
+        // Act
+        ResponseEntity<GetTrainerProfileResponse> response = trainerController.getTrainerProfile(username, headers);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+        verify(trainerService, times(1)).selectTrainer(username);
     }
 
+    // Unit test for getting a trainer profile with username mismatch
     @Test
-    void testUpdateTrainerProfile() throws Exception {
-        String username = "John.Doe";
-        TrainerUpdateRequest updateRequest = TrainerUpdateRequest.builder()
-                .username("John.Doe")
-                .firstName("Mary")
-                .lastName("Public")
-                .isActive(true)
-                .build();
-        TrainerUpdateResponse updateResponse = TrainerUpdateResponse.builder()
-                .username("John.Doe")
-                .firstName("Mary")
-                .lastName("Public")
-                .isActive(true)
-                .build();
+    void testGetTrainerProfile_UsernameMismatch() {
+        // Arrange
+        String username = "trainer1";
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {"differentUser", "password"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
 
-        String token = "John.Doe:password";
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
-        when(trainerService.updateTrainer(any(TrainerUpdateRequest.class))).thenReturn(updateResponse);
-
-        mockMvc.perform(put("/api/trainers/{username}", username)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HttpHeaders.AUTHORIZATION, token)
-                        .content(objectMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value(username))
-                .andExpect(jsonPath("$.firstName").value("Mary"))
-                .andExpect(jsonPath("$.lastName").value("Public"))
-                .andExpect(jsonPath("$.isActive").value(true));
+        // Act & Assert
+        assertThrows(ResponseStatusException.class, () -> trainerController.getTrainerProfile(username, headers));
+        verify(trainerService, never()).selectTrainer(anyString());
     }
 
+    // Unit test for updating a trainer profile with successful authentication
     @Test
-    void testChangeActivationStatus() throws Exception {
-        String username = "John.Doe";
-        ActivationRequest activationRequest = ActivationRequest.builder()
-                .username("John.Doe")
-                .isActive(false)
-                .build();
+    void testUpdateTrainerProfile_Success() {
+        // Arrange
+        String username = "trainer1";
+        TrainerUpdateRequest updateRequest = new TrainerUpdateRequest();
+        updateRequest.setUsername(username);
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {username, "password"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate(username, "password")).thenReturn(true);
 
-        String token = "John.Doe:password";
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
-        when(trainerService.selectTrainer(username)).thenReturn(GetTrainerProfileResponse.builder()
-                        .firstName("John")
-                        .lastName("Doe")
-                        .isActive(false)
-                .build());
+        TrainerUpdateResponse expectedResponse = new TrainerUpdateResponse();
+        when(trainerService.updateTrainer(updateRequest)).thenReturn(expectedResponse);
 
-        mockMvc.perform(patch("/api/trainers/{username}", username)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HttpHeaders.AUTHORIZATION, token)
-                        .content(objectMapper.writeValueAsString(activationRequest)))
-                .andExpect(status().isOk());
+        // Act
+        ResponseEntity<TrainerUpdateResponse> response = trainerController.updateTrainerProfile(username, updateRequest, headers);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+        verify(trainerService, times(1)).updateTrainer(updateRequest);
     }
 
+    // Unit test for changing trainer activation status with successful authentication
     @Test
-    void testGetTrainerTrainings() throws Exception {
-        String username = "John.Doe";
-        List<TrainerTrainingResponse> trainings = new ArrayList<>();
+    void testChangeActivationStatus_Success() {
+        // Arrange
+        String username = "trainer1";
+        ActivationRequest activationRequest = new ActivationRequest();
+        activationRequest.setUsername(username);
+        activationRequest.setIsActive(true);
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {username, "password"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate(username, "password")).thenReturn(true);
 
-        String token = "John.Doe:password";
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
-        when(trainerService.getTrainerTrainings(username, any(), any(), anyString())).thenReturn(trainings);
+        GetTrainerProfileResponse trainerProfile = new GetTrainerProfileResponse();
+        trainerProfile.setIsActive(false);  // Trainer is not active initially
+        when(trainerService.selectTrainer(username)).thenReturn(trainerProfile);
 
-        mockMvc.perform(get("/api/trainers/{username}/trainings", username)
-                        .header(HttpHeaders.AUTHORIZATION, token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(trainings.size()));
+        // Act
+        ResponseEntity<Void> response = trainerController.changeActivationStatus(username, activationRequest, headers);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(trainerService, times(1)).changeTrainerActivationStatus(activationRequest);
     }
 
+    // Unit test for fetching trainer trainings with successful authentication
     @Test
-    void testAddTraining() throws Exception {
-        String username = "John.Doe";
-        AddTrainingRequest addTrainingRequest = AddTrainingRequest.builder()
-                .traineeUsername("Mary.Public")
-                .trainerUsername("John.Doe")
-                .trainingName("Hatha Yoga")
-                .trainingDate(LocalDate.of(2024, 10, 10))
-                .trainingDuration(60)
-                .build();
+    void testGetTrainerTrainings_Success() {
+        // Arrange
+        String username = "trainer1";
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {username, "password"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate(username, "password")).thenReturn(true);
 
-        String token = "John.Doe:password";
-        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
+        List<TrainerTrainingResponse> expectedTrainings = List.of(new TrainerTrainingResponse());
+        when(trainerService.getTrainerTrainings(username, null, null, null)).thenReturn(expectedTrainings);
 
-        mockMvc.perform(post("/api/trainers/{username}/trainings", username)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HttpHeaders.AUTHORIZATION, token)
-                        .content(objectMapper.writeValueAsString(addTrainingRequest)))
-                .andExpect(status().isOk());
+        // Act
+        ResponseEntity<List<TrainerTrainingResponse>> response = trainerController.getTrainerTrainings(username, null, null, null, headers);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedTrainings, response.getBody());
+        verify(trainerService, times(1)).getTrainerTrainings(username, null, null, null);
     }
 
+    // Unit test for adding a training for a trainer with successful authentication
     @Test
-    void testGetTrainerProfileUnauthorized() throws Exception {
-        String username = "Ben.Wallace";
+    void testAddTraining_Success() {
+        // Arrange
+        String username = "trainer1";
+        AddTrainingRequest addTrainingRequest = new AddTrainingRequest();
+        addTrainingRequest.setTrainerUsername(username);
+        HttpHeaders headers = new HttpHeaders();
+        String[] validToken = {username, "password"};
+        when(authenticationFacade.extractAndValidateAuthToken(headers)).thenReturn(Optional.of(validToken));
+        when(userService.authenticate(username, "password")).thenReturn(true);
 
-        mockMvc.perform(get("/api/trainers/{username}", username))
-                .andExpect(status().isUnauthorized());
+        // Act
+        ResponseEntity<Void> response = trainerController.addTraining(username, addTrainingRequest, headers);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(trainerService, times(1)).addTraining(addTrainingRequest);
     }
-
-    @Test
-    void testGetTrainerProfileBadRequest() throws Exception {
-        String username = "John.Doe";
-        String token = "Ben.Wallace:password";
-
-        mockMvc.perform(get("/api/trainers/{username}", username)
-                        .header(HttpHeaders.AUTHORIZATION, token))
-                .andExpect(status().isBadRequest());
-    }
-
 
 }

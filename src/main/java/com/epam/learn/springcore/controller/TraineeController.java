@@ -4,13 +4,14 @@ import com.epam.learn.springcore.dto.*;
 import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.service.TraineeService;
 import com.epam.learn.springcore.service.UserService;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,18 +25,26 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/trainees")
-@RequiredArgsConstructor
 @Tag(name = "REST APIs for Trainee Resource")
 public class TraineeController {
     private final TraineeService traineeService;
     private final UserService userService;
     private final AuthenticationFacade authenticationFacade;
+    private final Timer registerTraineeTimer;
+
+    public TraineeController(TraineeService traineeService, UserService userService,
+                             AuthenticationFacade authenticationFacade, MeterRegistry meterRegistry) {
+        this.traineeService = traineeService;
+        this.userService = userService;
+        this.authenticationFacade = authenticationFacade;
+        this.registerTraineeTimer = meterRegistry.timer("trainee.register.time", "method", "registerTrainee");
+    }
 
     @Operation(summary = "Register Trainee", description = "Is used to save trainee into database")
     @ApiResponse(responseCode = "201", description = "Http Status 201 CREATED")
     @PostMapping()
     public ResponseEntity<UserResponse> registerTrainee(@Valid @RequestBody TraineeRegistrationRequest traineeRegistrationRequest) {
-        UserResponse trainee = traineeService.createTrainee(traineeRegistrationRequest);
+        UserResponse trainee = registerTraineeTimer.record(() -> traineeService.createTrainee(traineeRegistrationRequest));
         return new ResponseEntity<>(trainee, HttpStatus.CREATED);
     }
 
