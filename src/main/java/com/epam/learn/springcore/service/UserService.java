@@ -3,25 +3,18 @@ package com.epam.learn.springcore.service;
 import com.epam.learn.springcore.dao.UserRepository;
 import com.epam.learn.springcore.entity.User;
 import com.epam.learn.springcore.exception.TrainerNotFoundException;
-import com.epam.learn.springcore.exception.UserNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    public boolean authenticate(String username, String password) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User " + username + " not found"));
-        return user.getPassword().equals(password);
-    }
+    private final PasswordEncoder passwordEncoder;
 
     // Password generation utility
     public String generateRandomPassword() {
@@ -44,7 +37,7 @@ public class UserService {
         log.info("Changing password for user: {}", username);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new TrainerNotFoundException("User " + username + " not found"));
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         log.info("Password for user {} changed", username);
     }
