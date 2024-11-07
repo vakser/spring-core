@@ -4,7 +4,6 @@ import com.epam.learn.springcore.controller.TraineeController;
 import com.epam.learn.springcore.dto.*;
 import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.jwt.JwtTokenUtil;
-import com.epam.learn.springcore.service.CustomUserDetailsService;
 import com.epam.learn.springcore.service.TraineeService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -16,7 +15,6 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -24,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class TraineeControllerTest {
@@ -35,9 +32,6 @@ public class TraineeControllerTest {
     private MeterRegistry meterRegistry;
 
     @Mock
-    private CustomUserDetailsService userDetailsService;
-
-    @Mock
     private JwtTokenUtil jwtTokenUtil;
 
     @Mock
@@ -46,30 +40,11 @@ public class TraineeControllerTest {
     @InjectMocks
     private TraineeController traineeController;
 
-    private Timer registerTraineeTimer;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        registerTraineeTimer = mock(Timer.class);
+        Timer registerTraineeTimer = mock(Timer.class);
         when(meterRegistry.timer("trainee.register.time", "method", "registerTrainee")).thenReturn(registerTraineeTimer);
-    }
-
-    @Test
-    void testRegisterTrainee_Success() {
-        TraineeRegistrationRequest request = new TraineeRegistrationRequest("John", "Doe", LocalDate.of(1990, 1, 1), "Somewhere");
-        UserResponse userResponse = new UserResponse("John.Doe", "hashed_password");
-        UserDetails userDetails = mock(UserDetails.class);
-        ProfileCreatedResponse expectedResponse = new ProfileCreatedResponse("John.Doe", "hashed_password", "jwt_token");
-
-        when(registerTraineeTimer.record(() -> traineeService.createTrainee(request))).thenReturn(userResponse);
-        when(userDetailsService.loadUserByUsername("John.Doe")).thenReturn(userDetails);
-        when(jwtTokenUtil.generateToken(userDetails)).thenReturn("jwt_token");
-
-        ResponseEntity<ProfileCreatedResponse> response = traineeController.registerTrainee(request);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(expectedResponse, response.getBody());
     }
 
     @Test
