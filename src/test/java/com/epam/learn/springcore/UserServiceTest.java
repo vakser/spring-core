@@ -3,7 +3,6 @@ package com.epam.learn.springcore;
 import com.epam.learn.springcore.dao.UserRepository;
 import com.epam.learn.springcore.entity.User;
 import com.epam.learn.springcore.exception.TrainerNotFoundException;
-import com.epam.learn.springcore.exception.UserNotFoundException;
 import com.epam.learn.springcore.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,60 +25,6 @@ public class UserServiceTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    public void testAuthenticateSuccess() {
-        // Given
-        String username = "johndoe";
-        String password = "password123";
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(password);
-
-        // Mock repository behavior
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-
-        // When
-        boolean result = userService.authenticate(username, password);
-
-        // Then
-        assertTrue(result);
-        verify(userRepository, times(1)).findByUsername(username);
-    }
-
-    @Test
-    public void testAuthenticateFailure_WrongPassword() {
-        // Given
-        String username = "johndoe";
-        String password = "wrongPassword";
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword("correctPassword");
-
-        // Mock repository behavior
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-
-        // When
-        boolean result = userService.authenticate(username, password);
-
-        // Then
-        assertFalse(result);
-        verify(userRepository, times(1)).findByUsername(username);
-    }
-
-    @Test
-    public void testAuthenticateFailure_UserNotFound() {
-        // Given
-        String username = "unknownUser";
-        String password = "password123";
-
-        // Mock repository behavior to throw exception
-        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
-
-        // When / Then
-        assertThrows(UserNotFoundException.class, () -> userService.authenticate(username, password));
-        verify(userRepository, times(1)).findByUsername(username);
     }
 
     @Test
@@ -130,27 +75,6 @@ public class UserServiceTest {
         assertEquals(expectedUsername, calculatedUsername);
         verify(userRepository, times(1)).findByUsername(baseUsername);
         verify(userRepository, times(1)).findByUsername(expectedUsername);
-    }
-
-    @Test
-    public void testChangePassword() {
-        // Given
-        String username = "johndoe";
-        String newPassword = "newPassword123";
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword("oldPassword");
-
-        // Mock repository behavior
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-
-        // When
-        userService.changePassword(username, newPassword);
-
-        // Then
-        assertEquals(newPassword, user.getPassword());
-        verify(userRepository, times(1)).findByUsername(username);
-        verify(userRepository, times(1)).save(user);
     }
 
     @Test

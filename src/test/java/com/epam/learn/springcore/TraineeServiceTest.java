@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -35,6 +36,9 @@ public class TraineeServiceTest {
 
     @Mock
     private TrainingRepository trainingRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
 
     private Trainee trainee;

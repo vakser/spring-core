@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -28,6 +29,7 @@ public class TraineeService {
     private final UserService userService;
     private final TrainingRepository trainingRepository;
     private final TrainerRepository trainerRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserResponse createTrainee(TraineeRegistrationRequest traineeRegistrationRequest) {
@@ -38,7 +40,8 @@ public class TraineeService {
         user.setUsername(userService.calculateUsername(traineeRegistrationRequest.getFirstName(), traineeRegistrationRequest.getLastName()));
         log.info("Trainee username calculated: {}", user.getUsername());
         log.info("Generating trainee password");
-        user.setPassword(userService.generateRandomPassword());
+        String password = userService.generateRandomPassword();
+        user.setPassword(passwordEncoder.encode(password));
         log.info("Trainee password generated: {}", user.getPassword());
         user.setIsActive(false);
         log.info("Creating trainee: {}", user.getUsername());
@@ -50,7 +53,7 @@ public class TraineeService {
         log.info("Successfully created trainee: {}", user.getUsername());
         UserResponse userResponse = new UserResponse();
         userResponse.setUsername(trainee.getUser().getUsername());
-        userResponse.setPassword(trainee.getUser().getPassword());
+        userResponse.setPassword(password);
         return userResponse;
     }
 
