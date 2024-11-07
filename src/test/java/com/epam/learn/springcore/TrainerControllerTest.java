@@ -4,6 +4,7 @@ import com.epam.learn.springcore.controller.TrainerController;
 import com.epam.learn.springcore.dto.*;
 import com.epam.learn.springcore.facade.AuthenticationFacade;
 import com.epam.learn.springcore.jwt.JwtTokenUtil;
+import com.epam.learn.springcore.service.CustomUserDetailsService;
 import com.epam.learn.springcore.service.TrainerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,8 +14,10 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -24,6 +27,8 @@ public class TrainerControllerTest {
     private TrainerService trainerService;
     @Mock
     private AuthenticationFacade authenticationFacade;
+    @Mock
+    private CustomUserDetailsService userDetailsService;
     @Mock
     private JwtTokenUtil jwtTokenUtil;
     @InjectMocks
@@ -54,6 +59,37 @@ public class TrainerControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedResponse, response.getBody());
         verify(trainerService, times(1)).selectTrainer(username);
+    }
+
+    @Test
+    public void testGetTrainerProfile_Forbidden() {
+        String username = "trainer123";
+        HttpHeaders headers = new HttpHeaders();
+
+        when(authenticationFacade.extractAuthToken(headers)).thenReturn("invalidToken");
+        when(jwtTokenUtil.getUsernameFromToken("invalidToken")).thenReturn("anotherUser");
+
+        ResponseEntity<GetTrainerProfileResponse> response = trainerController.getTrainerProfile(username, headers);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(trainerService, never()).selectTrainer(username);
+    }
+
+    @Test
+    public void testRegisterTrainer() {
+        TrainerRegistrationRequest request = new TrainerRegistrationRequest();
+        UserResponse userResponse = new UserResponse("trainer123", "password123");
+        UserDetails userDetails = mock(UserDetails.class);
+
+        when(trainerService.createTrainer(request)).thenReturn(userResponse);
+        when(userDetailsService.loadUserByUsername("trainer123")).thenReturn(userDetails);
+        when(jwtTokenUtil.generateToken(userDetails)).thenReturn("mockToken");
+
+        ResponseEntity<ProfileCreatedResponse> response = trainerController.registerTrainer(request);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("trainer123", Objects.requireNonNull(response.getBody()).getUsername());
+        verify(trainerService).createTrainer(request);
     }
 
     // Unit test for updating a trainer profile with successful authentication
